@@ -16,6 +16,7 @@ import { phaseCaption } from "./forming.js";
 import { builderReadout } from "./readout.js";
 import type { BuilderReadout } from "./readout.js";
 import { TankViewport } from "./scene.js";
+import { mountStand } from "./stand-view.js";
 import "./styles.css";
 
 const form = document.querySelector<HTMLFormElement>("#tank-form");
@@ -47,10 +48,37 @@ replay.addEventListener("click", () => {
   sync(true);
 });
 
+const stand = mountStand({
+  viewport,
+  getDesign: () => current,
+  setStatus: (value) => text("#forming-status", value),
+});
+
+const viewBay = document.querySelector<HTMLButtonElement>("#view-bay");
+const viewStand = document.querySelector<HTMLButtonElement>("#view-stand");
+viewBay?.addEventListener("click", () => showView("bay"));
+viewStand?.addEventListener("click", () => showView("stand"));
+
 sync(false);
 requestAnimationFrame(() => {
   if (current) viewport.replay();
 });
+
+function showView(view: "bay" | "stand"): void {
+  document.querySelector("#bay-panel")?.toggleAttribute("hidden", view !== "bay");
+  document.querySelector("#stand-panel")?.toggleAttribute("hidden", view !== "stand");
+  document.querySelector("#heat-legend")?.toggleAttribute("hidden", view !== "stand");
+  document.querySelector("#plot-dock")?.toggleAttribute("hidden", view !== "stand");
+  document.querySelector("#replay")?.toggleAttribute("hidden", view !== "stand" ? false : true);
+  if (viewBay) viewBay.setAttribute("aria-pressed", view === "bay" ? "true" : "false");
+  if (viewStand) viewStand.setAttribute("aria-pressed", view === "stand" ? "true" : "false");
+  if (view === "bay") {
+    viewport.setHeatmap(null);
+    viewport.setDisplacement(1, 1);
+    if (current) text("#forming-status", phaseCaption("done", current));
+  }
+  stand.setActive(view === "stand");
+}
 
 function sync(play: boolean): void {
   const parsed = parseBuilderFields(readFields());
@@ -79,6 +107,7 @@ function sync(play: boolean): void {
   paint(readout);
   viewport.setDesign(readout.drawable ? parsed.design : null);
   if (play) viewport.replay();
+  stand.refresh();
 }
 
 function paint(readout: BuilderReadout): void {

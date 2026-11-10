@@ -10,12 +10,25 @@
   <body>
     <main class="bay">
       <section class="viewport" id="viewport" aria-label="Tank bay">
+        <div id="heat-legend" class="heat-legend" hidden>
+          <span>Low use</span>
+          <span class="heat-bar"></span>
+          <span>At limit</span>
+        </div>
         <div class="viewport-bar">
           <p class="forming-status" id="forming-status">Bay 2 is clear.</p>
           <button type="button" id="replay" class="form-tank">Form the tank</button>
         </div>
       </section>
+      <div id="plot-dock" class="plot-dock" hidden>
+        <canvas id="plot" aria-label="Pressure and von Mises during the test"></canvas>
+      </div>
       <aside class="traveler" aria-label="Tank traveler">
+        <nav class="views" aria-label="Shop views">
+          <button type="button" id="view-bay" aria-pressed="true">Bay</button>
+          <button type="button" id="view-stand" aria-pressed="false">Test stand</button>
+        </nav>
+        <div id="bay-panel">
         <p class="kicker">Bay 02 · Traveler RS-01</p>
         <div class="traveler-head">
           <h1>Propellant tank</h1>
@@ -62,6 +75,51 @@
           </div>
         </form>
         <p class="fine">Mass and the pressures come from the tank card at shop ambient, 293 K. Dollars are planning figures. Drag the bay to look around the tank.</p>
+        </div>
+        <div id="stand-panel" hidden>
+          <p class="kicker">Stand · Proof and burst</p>
+          <div class="traveler-head">
+            <h2>Pressure test</h2>
+            <p class="stamp" id="stand-stamp" data-stamp="not_signable">Hold</p>
+          </div>
+          <p class="headline" id="stand-headline"></p>
+          <p class="detail" id="stand-reason"></p>
+          <p class="temperature" id="temperature-label"></p>
+          <dl class="figures" aria-live="polite">
+            <div><dt>Gauge</dt><dd id="gauge">—</dd></div>
+            <div><dt>von Mises</dt><dd id="stress">—</dd></div>
+            <div class="wide-figure"><dt>Station</dt><dd id="station">—</dd></div>
+          </dl>
+          <form id="stand-form" autocomplete="off">
+            <div class="fields">
+              <label>Propellant
+                <select id="propellant">
+                  <option value="lox">LOX</option>
+                  <option value="lch4">LCH4</option>
+                  <option value="rp1">RP-1</option>
+                </select>
+              </label>
+              <label>Operating pressure (psi)
+                <input id="meop" type="number" min="1" step="1" inputmode="numeric" />
+              </label>
+              <label class="wide">Wall temperature
+                <select id="wall">
+                  <option value="propellant">Propellant temperature</option>
+                  <option value="ambient">Shop ambient</option>
+                </select>
+              </label>
+              <label class="check wide">
+                <input id="magnify" type="checkbox" checked />
+                Show displacement at 40×
+              </label>
+            </div>
+          </form>
+          <div class="run-buttons">
+            <button type="button" id="proof">Proof test</button>
+            <button type="button" id="burst-run">Ramp to burst</button>
+          </div>
+          <p class="fine">The gauge, the colors, and the failure line come from the same tank card as the bay. The plot under the tank is the record of this run.</p>
+        </div>
       </aside>
     </main>
     <script type="module" src="/src/web/main.ts"></script>
