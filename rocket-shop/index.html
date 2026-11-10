@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#141311" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23141311'/%3E%3Crect y='7' width='16' height='2' fill='%23e4b15a'/%3E%3C/svg%3E" />
+    <title>Rocket shop — tank bay</title>
+  </head>
+  <body>
+    <main class="bay">
+      <section class="viewport" id="viewport" aria-label="Tank bay">
+        <div class="viewport-bar">
+          <p class="forming-status" id="forming-status">Bay 2 is clear.</p>
+          <button type="button" id="replay" class="form-tank">Form the tank</button>
+        </div>
+      </section>
+      <aside class="traveler" aria-label="Tank traveler">
+        <p class="kicker">Bay 02 · Traveler RS-01</p>
+        <div class="traveler-head">
+          <h1>Propellant tank</h1>
+          <p class="stamp" id="stamp" data-stamp="rejected">Hold</p>
+        </div>
+        <p class="headline" id="headline"></p>
+        <p class="detail" id="detail"></p>
+        <ul class="reasons" id="reasons"></ul>
+        <dl class="figures" aria-live="polite">
+          <div class="wide-figure"><dt>Predicted burst</dt><dd id="burst-out">—</dd></div>
+          <div><dt>Predicted yield</dt><dd id="yield-out">—</dd></div>
+          <div><dt>Mass</dt><dd id="mass-out">—</dd></div>
+          <div><dt>Overall length</dt><dd id="length-out">—</dd></div>
+          <div><dt>Planning total</dt><dd id="total-cost-out">—</dd></div>
+          <div><dt>Material</dt><dd id="material-cost-out">—</dd></div>
+          <div><dt>Process</dt><dd id="process-cost-out">—</dd></div>
+        </dl>
+        <form id="tank-form" autocomplete="off">
+          <div class="fields">
+            <label class="wide">Material
+              <select id="material" name="material"></select>
+            </label>
+            <label>Inner diameter (m)
+              <input id="diameter" name="diameter" type="number" min="0.05" step="0.01" inputmode="decimal" />
+            </label>
+            <label>Barrel length (m)
+              <input id="length" name="length" type="number" min="0.05" step="0.01" inputmode="decimal" />
+            </label>
+            <label>Wall thickness (mm)
+              <input id="thickness" name="thickness" type="number" min="0.2" step="0.1" inputmode="decimal" />
+            </label>
+            <label>Dome
+              <select id="dome" name="dome"></select>
+            </label>
+            <label class="wide">Forming
+              <select id="forming" name="forming"></select>
+            </label>
+            <label>Weld
+              <select id="weld" name="weld"></select>
+            </label>
+            <label>Heat treatment
+              <select id="heat" name="heat"></select>
+            </label>
+          </div>
+        </form>
+        <p class="fine">Mass and the pressures come from the tank card at shop ambient, 293 K. Dollars are planning figures. Drag the bay to look around the tank.</p>
+      </aside>
+    </main>
+    <script type="module" src="/src/web/main.ts"></script>
+  </body>
+</html>

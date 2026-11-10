@@ -5,7 +5,10 @@ A propellant-tank shop for one tank. The player picks a material, a wall, a dome
 ```bash
 npm test
 npm run build
+npm run dev
 ```
+
+`npm run dev` opens the tank bay. The traveler’s mass, cost, yield, and burst are the core’s numbers at shop ambient (293.15 K), via `builderReadout`. An operating pressure and a propellant temperature belong to the test stand. The forming animation shows the route the player picked. The bright bead is a marker for the torch path, not a measured weld size.
 
 The core is SI internally (pascals, meters, kelvin). The failure line is reported in psi because that is how the shop reads a gauge.
 
