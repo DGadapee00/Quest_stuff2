@@ -1,6 +1,6 @@
 # Rocket shop
 
-A propellant-tank shop for one tank. The player picks a material, a wall, a dome, a forming route, and a weld, then pressure-tests the tank. This package starts with the physics core: no graphics. Stress, mass, and the pass/fail line all come from `src/` and are checked against hand-worked cases in `test/`.
+A propellant-tank shop for one tank. The player picks a material, a wall, a dome, a forming route, and a weld, then pressure-tests the tank. Stress, mass, and the pass/fail line all come from `src/` and are checked against hand-worked cases in `test/`.
 
 ```bash
 npm test
@@ -8,7 +8,7 @@ npm run build
 npm run dev
 ```
 
-`npm run dev` opens the tank bay. The traveler’s mass, cost, yield, and burst are the core’s numbers at shop ambient (293.15 K), via `builderReadout`. An operating pressure and a propellant temperature belong to the test stand. The forming animation shows the route the player picked. The bright bead is a marker for the torch path, not a measured weld size.
+`npm run dev` opens the shop. The bay traveler’s mass, cost, yield, and burst are the core’s numbers at shop ambient (293.15 K), via `builderReadout`. The test stand sets the propellant, the operating pressure, and whether the wall is at that propellant temperature or at shop ambient. Proof and burst ramps, the heatmap, and the failure line come from `assessTank`. The forming bead and the 40× displacement are marked as visual, not as measured sizes.
 
 The core is SI internally (pascals, meters, kelvin). The failure line is reported in psi because that is how the shop reads a gauge.
 

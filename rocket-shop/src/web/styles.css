@@ -14,6 +14,8 @@
 
 * { box-sizing: border-box; }
 
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   min-height: 100%;
@@ -24,8 +26,14 @@ html, body {
 .bay {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 400px);
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 100dvh;
 }
+
+.viewport { grid-column: 1; grid-row: 1; }
+.plot-dock { grid-column: 1; grid-row: 2; background: #161410; border-top: 1px solid var(--line); }
+.plot-dock canvas { display: block; width: 100%; height: 128px; }
+.traveler { grid-column: 2; grid-row: 1 / span 2; }
 
 .viewport {
   position: relative;
@@ -94,6 +102,95 @@ input:focus-visible {
   padding: 22px 18px 28px;
   max-height: 100dvh;
   overflow: auto;
+}
+
+.views {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.views button {
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 1.2rem;
+  min-height: 44px;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.views button[aria-pressed="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--amber);
+}
+
+h2 {
+  margin: 0;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 1.7rem;
+}
+
+.temperature { color: var(--muted); font-size: 0.88rem; }
+
+.check {
+  flex-direction: row;
+  align-items: center;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.check input { width: auto; min-height: 0; }
+
+.run-buttons { display: flex; gap: 8px; margin: 12px 0; }
+
+.run-buttons button {
+  flex: 1;
+  min-height: 44px;
+  background: transparent;
+  color: var(--amber);
+  border: 1px solid var(--amber);
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.run-buttons button:disabled { opacity: 0.4; cursor: default; }
+
+
+.heat-legend {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(20, 19, 17, 0.72);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.heat-bar {
+  width: 88px;
+  height: 8px;
+  background: linear-gradient(90deg, #3d5c73, #e4b15a 65%, #ff3b1f);
 }
 
 .kicker {
@@ -230,18 +327,23 @@ dd {
 @media (max-width: 800px) {
   .bay {
     grid-template-columns: 1fr;
-    grid-template-rows: 44dvh auto;
+    grid-template-rows: 40dvh auto auto;
   }
 
   .viewport {
     position: sticky;
     top: 0;
     z-index: 2;
-    height: 44dvh;
+    grid-column: 1;
+    grid-row: 1;
+    height: 40dvh;
     min-height: 0;
   }
 
+  .plot-dock { grid-column: 1; grid-row: 2; }
   .traveler {
+    grid-column: 1;
+    grid-row: 3;
     max-height: none;
     border-left: 0;
     border-top: 6px solid var(--amber);

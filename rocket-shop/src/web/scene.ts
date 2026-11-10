@@ -26,6 +26,7 @@ import type { MaterialId, TankDesign } from "../types.js";
 import { assertNever } from "../types.js";
 import { FORMING_SECONDS, formingFrame } from "./forming.js";
 import type { FormingPhase } from "./forming.js";
+import type { Heatmap } from "./stand.js";
 
 const TAU = Math.PI * 2;
 
@@ -36,7 +37,10 @@ export class TankViewport {
   private readonly tank = new Group();
   private readonly cradle = new Group();
   private readonly shell: MeshStandardMaterial;
+  private readonly apex: MeshStandardMaterial;
+  private readonly knuckle: MeshStandardMaterial;
   private readonly seam: MeshStandardMaterial;
+  private readonly girth: MeshStandardMaterial;
   private readonly bead: MeshStandardMaterial;
   private readonly plies: MeshStandardMaterial[];
   private readonly saddle: MeshStandardMaterial;
@@ -56,6 +60,10 @@ export class TankViewport {
   private lastY = 0;
   private lastPhase: FormingPhase | null = null;
   private frameId = 0;
+  private heatmap: Heatmap | null = null;
+  private formScaleX = 1;
+  private radialScale = 1;
+  private axialScale = 1;
   private readonly reduceMotion: boolean;
   private readonly onPhase: (phase: FormingPhase) => void;
 
@@ -64,7 +72,10 @@ export class TankViewport {
     this.reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     this.camera = new PerspectiveCamera(32, 1, 0.05, 80);
     this.shell = new MeshStandardMaterial({ color: 0xc5ccd1, metalness: 0.86, roughness: 0.34, side: DoubleSide });
+    this.apex = new MeshStandardMaterial({ color: 0xc5ccd1, metalness: 0.86, roughness: 0.34, side: DoubleSide });
+    this.knuckle = new MeshStandardMaterial({ color: 0xc5ccd1, metalness: 0.86, roughness: 0.34, side: DoubleSide });
     this.seam = new MeshStandardMaterial({ color: 0x8d5a3c, metalness: 0.65, roughness: 0.42 });
+    this.girth = new MeshStandardMaterial({ color: 0x8d5a3c, metalness: 0.65, roughness: 0.42 });
     this.bead = new MeshStandardMaterial({ color: 0xd7ecff, emissive: 0x9fd4ff, emissiveIntensity: 2.2, metalness: 0.2, roughness: 0.25 });
     this.plies = [0xd8a15a, 0x8a9294, 0x6e8ea6, 0xc46a3a].map(
       (color) =>
@@ -139,6 +150,22 @@ export class TankViewport {
     this.draw(design, 1, false);
   }
 
+  setHeatmap(heatmap: Heatmap | null): void {
+    this.heatmap = heatmap;
+    if (heatmap) {
+      this.applyHeat(heatmap);
+      return;
+    }
+    this.clearHeatEmissive();
+    if (this.design) this.paintShell(this.design.materialId, "done", 1);
+  }
+
+  setDisplacement(radial: number, axial: number): void {
+    this.radialScale = radial;
+    this.axialScale = axial;
+    this.applyScale();
+  }
+
   replay(): void {
     if (!this.design) return;
     if (this.reduceMotion) {
@@ -157,7 +184,10 @@ export class TankViewport {
     cancelAnimationFrame(this.frameId);
     this.clearTank();
     this.shell.dispose();
+    this.apex.dispose();
+    this.knuckle.dispose();
     this.seam.dispose();
+    this.girth.dispose();
     this.bead.dispose();
     for (const ply of this.plies) ply.dispose();
     this.saddle.dispose();
@@ -193,7 +223,7 @@ export class TankViewport {
     this.tank.position.y = radius + 0.04;
     this.look.set(0, radius * 0.85, 0);
     this.tank.rotation.x = 0;
-    this.tank.scale.set(1, 1, 1);
+    this.formScaleX = 1;
     this.weldLight.intensity = 0;
 
     switch (design.forming) {
@@ -210,6 +240,8 @@ export class TankViewport {
         assertNever(design.forming);
     }
     this.addSaddles(radius, length);
+    if (this.heatmap) this.applyHeat(this.heatmap);
+    this.applyScale();
   }
 
   private drawRolled(
@@ -247,7 +279,7 @@ export class TankViewport {
     live: boolean,
   ): void {
     const stretch = phase === "spin" ? 0.08 + 0.92 * local : 1;
-    this.tank.scale.x = stretch;
+    this.formScaleX = stretch;
     if (phase === "spin" && live) this.tank.rotation.x = this.elapsed * 6;
     this.addCylinder(radius, length, TAU, this.shell);
     this.addHeads(design, radius, length, 0);
@@ -283,13 +315,28 @@ export class TankViewport {
 
   private addHeads(design: TankDesign, radius: number, length: number, slide: number): void {
     const squash = design.dome === "hemispherical" ? 1 : 0.5;
-    this.addHead(radius, length / 2 + slide, squash, -1);
-    this.addHead(radius, -(length / 2 + slide), squash, 1);
+    const crown = design.dome === "hemispherical" ? Math.PI / 2 : 0.85;
+    for (const end of [1, -1] as const) {
+      const x = end * (length / 2 + slide);
+      const direction = end === 1 ? -1 : 1;
+      this.addHead(radius, x, squash, direction, this.apex, 0, crown);
+      if (design.dome === "elliptical_2to1") {
+        this.addHead(radius, x, squash, direction, this.knuckle, crown, Math.PI / 2 - crown);
+      }
+    }
   }
 
-  private addHead(radius: number, x: number, squash: number, direction: -1 | 1): void {
-    const geometry = this.track(new SphereGeometry(radius, 48, 24, 0, TAU, 0, Math.PI / 2));
-    const mesh = new Mesh(geometry, this.shell);
+  private addHead(
+    radius: number,
+    x: number,
+    squash: number,
+    direction: -1 | 1,
+    material: MeshStandardMaterial,
+    thetaStart: number,
+    thetaLength: number,
+  ): void {
+    const geometry = this.track(new SphereGeometry(radius, 48, 18, 0, TAU, thetaStart, thetaLength));
+    const mesh = new Mesh(geometry, material);
     mesh.scale.y = squash;
     mesh.rotation.z = direction === 1 ? Math.PI / 2 : -Math.PI / 2;
     mesh.position.x = x;
@@ -306,7 +353,7 @@ export class TankViewport {
   private addGirthRings(radius: number, length: number, beadSize: number): void {
     for (const x of [length / 2, -length / 2]) {
       const geometry = this.track(new TorusGeometry(radius, beadSize * 0.28, 8, 48));
-      const mesh = new Mesh(geometry, this.seam);
+      const mesh = new Mesh(geometry, this.girth);
       mesh.rotation.y = Math.PI / 2;
       mesh.position.x = x;
       this.tank.add(mesh);
@@ -359,7 +406,51 @@ export class TankViewport {
       this.shell.roughness = 0.34;
       this.shell.map = null;
     }
+    this.apex.color.copy(this.shell.color);
+    this.apex.metalness = this.shell.metalness;
+    this.apex.roughness = this.shell.roughness;
+    this.apex.map = this.shell.map;
+    this.knuckle.color.copy(this.shell.color);
+    this.knuckle.metalness = this.shell.metalness;
+    this.knuckle.roughness = this.shell.roughness;
+    this.knuckle.map = this.shell.map;
     this.shell.needsUpdate = true;
+    this.apex.needsUpdate = true;
+    this.knuckle.needsUpdate = true;
+  }
+
+  private applyHeat(map: Heatmap): void {
+    this.paintRegion(this.shell, map.cylinder, map.failed === "cylinder_membrane");
+    this.paintRegion(this.apex, map.apex, map.failed === "dome_apex");
+    this.paintRegion(this.knuckle, map.knuckle ?? map.apex, map.failed === "dome_knuckle");
+    if (map.longitudinal) this.paintRegion(this.seam, map.longitudinal, map.failed === "longitudinal_weld");
+    if (map.girth) this.paintRegion(this.girth, map.girth, map.failed === "girth_weld");
+    this.shell.map = null;
+    this.apex.map = null;
+    this.knuckle.map = null;
+  }
+
+  private paintRegion(material: MeshStandardMaterial, color: string, failed: boolean): void {
+    material.color.set(color);
+    material.emissive.set(failed ? color : "#000000");
+    material.emissiveIntensity = failed ? 0.7 : 0;
+    material.metalness = 0.16;
+    material.roughness = 0.5;
+  }
+
+  private clearHeatEmissive(): void {
+    for (const material of [this.shell, this.apex, this.knuckle, this.seam, this.girth]) {
+      material.emissive.set("#000000");
+      material.emissiveIntensity = 0;
+    }
+    this.seam.color.set("#8d5a3c");
+    this.girth.color.set("#8d5a3c");
+    this.seam.metalness = 0.65;
+    this.girth.metalness = 0.65;
+  }
+
+  private applyScale(): void {
+    this.tank.scale.set(this.formScaleX * this.axialScale, this.radialScale, this.radialScale);
   }
 
   private addBay(): void {
